@@ -29,7 +29,7 @@ def CheckIfExists(hostname=None, serial_number=None):
 
     assetExists = False
 
-    if(QueryHostname(hostname) is not Error or type(QuerySerialNumber(serial_number)) is not Error):
+    if(type(QueryHostname(hostname)) is not Error or type(QuerySerialNumber(serial_number)) is not Error):
         assetExists = True
     
     return assetExists
