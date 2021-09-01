@@ -1,8 +1,8 @@
 from os import system
 import requests
 
-appkey = None #API KEY HERE
-api_url = None #PUT API URL HERE
+appkey = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNTQ5ZDU1OGIxOTE4MjdmMTgxOWEwNjFiNDJiMjgyZGVhNzIxYWM0Y2FjM2Y1Y2MyNWFlZTQ5YTAyZjhkNmEzNjE2MmRkZDVkMGQ4ZWZlNjMiLCJpYXQiOjE2MjkzODQzNzUuNTE4NjMyLCJuYmYiOjE2MjkzODQzNzUuNTE4NjM0LCJleHAiOjI4OTE2ODgzNzUuNDkwODYxLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.m-Ognw_S46c0JDtFqQUCK8Tu7D3ZTa8366FeJhrnw583xpoHTBMdieVdrlpZW9xdcHATLzKfksIJ-o6LmQBwoCuXd0D-jcGMJ540-ODuDhiIChGOi8C_VzJ2v_ONHBuvvlqeOpBOijHaIFS-fIu-HewpCC2AZd-ZPcynj9X8m7RRzfA6zMjUaiGdcEZctMAKOYtactMFzir0WM3YayZcTHt3AuMoZhZPMTBAKNiwO9WgeXuVul4eVkpk-x5gd1k9bGX7kN58_qpvTJZIG4mmp4pLdMvRtW40Z2xN8-fyXKvVj7gxu-uOU6b0aPHscnXEZNq95NsQBlNOVDXTnweM4nr0YBVYR2UVsdih_3iWF5e-g8vdXtWyFHGuQ3sYetzCIlcNhMwL1jRbOtm7mfaXEtv5fGTNilNgEei_Vi_FiFKIE4xFyOoJf-qsaqZa6Dkq0uHUw9zqYmX7AhF8DUPeTZ5iBKddFwLafFQlD4h3fM3Dg3XSYn7HpxFfH3W6aWC5zrJmOqlA8gaMM_xRQ2K-SGhD9G-cU1vVWZMTfIld7-GI0b6xxg48EC3AUaGY6dyE1Mt2HimnqwM8kmorCBw8mz75eo2VwR4CXSGyNDEsoII0mTB67twclePKcpKAkgHSjkrSfsGH_3spnRuyfQR17kkueuOHDib7VaKg-d9mjcE' #API KEY HERE
+api_url = 'http://snipeit.kenmarkopt.com/api/v1' #PUT API URL HERE
 
 headers = {
     'Accept': 'application/json', 
@@ -15,9 +15,6 @@ class Error():
     #Error Types: 'API Error', 'Workflow Error', 'Does Not Exist'
     error_type = None
     error_message = None
-
-    def DisplayError(error_type=error_type,error_message=error_message):
-        print('Error Type: {0}\nError Message: {1}'.format(error_type,error_message))
 
     def __init__(self, type, message):
         self.error_type = type
@@ -37,9 +34,12 @@ def CheckIfExists(hostname=None, serial_number=None):
 def GetAssetID(hostname=None,serial_number=None):
 
     serialnumberQuery = QuerySerialNumber(serial_number)
+    hostnameQuery = QueryHostname(hostname)
 
     if(type(serialnumberQuery) is not Error):
         return serialnumberQuery['id']
+    elif(type(hostnameQuery) is not Error):
+        return hostnameQuery['id']
     else:
         return None
 
@@ -74,17 +74,18 @@ def CreateNewAsset(system_info):
     payload = GenerateAssetPayload(system_info)
 
     if(type(payload) is not Error):
-        query = api_url+'/hardware/'
+        query = api_url+'/hardware'
         PostRequest(query=query,payload=payload)
+        return True
     else:
         return payload
 
 def UpdateAsset(system_info, asset_id):
     payload = GenerateAssetPayload(system_info)
-
-    if(type(payload) is not Error):
+    if(type(payload) is not Error and asset_id != None):
         query = api_url+'/hardware/{0}'.format(asset_id)
         PatchRequest(query,payload)
+        return True
     else:
         return payload
 

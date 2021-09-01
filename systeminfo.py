@@ -53,7 +53,6 @@ class SystemInfo(object):
         cinfo = cpuinfo.get_cpu_info()
         data = {}
         data["Processor"] = cinfo['brand_raw']
-        data["CPU"] = cinfo['count']
 
         if os_info.platformName() == 'Linux':
             Hardware_info = self.getUnixSystemSpec(data)
@@ -70,32 +69,14 @@ class SystemInfo(object):
     def getUnixSystemSpec(self, data):
         """ Collect hardware info for Linux """
 
-        data["Total Disk Space"] = str(shutil.disk_usage("/")[0] // (2**30))+"GB"
-        data["Available Space"] = str(shutil.disk_usage("/")[2] // (2**30))+"GB"
         try:
             data["Hostname"] = subprocess.check_output("hostname", stderr=open(os.devnull, 'w'), shell=True).decode('utf-8').strip("\n")
         except Exception as error:
             data["Hostname"] = None
         try:
-            data["Ip"] = subprocess.check_output("ip route get 1",stderr=open(os.devnull, 'w'), shell=True).decode('utf-8').split('src ')[1].split(' ')[0]
-        except Exception as error:
-            data["Ip"] = None
-        try:
             data["Operating System"] = str(subprocess.check_output("cat /etc/*-release | grep NAME=",stderr=open(os.devnull, 'w'), shell=True)).partition("\\nNAME=")[2].split("\\n")[0].strip('"')
         except Exception as error:
             data["Operating System"] = None
-        try:
-            data["OS Version"] = str(subprocess.check_output("cat /etc/*-release | grep VERSION_ID",stderr=open(os.devnull, 'w'), shell=True)).partition('VERSION_ID=')[2].strip('"')[:-4]
-        except Exception as error:
-            data["OS Version"] = None
-        try:
-            data["CPU_Core"] = str(subprocess.check_output('lscpu | grep socket:', stderr=open(os.devnull, 'w'), shell=True)).split(':')[1].strip(' ').strip("\\n'")
-        except Exception as error:
-            data["CPU_Core"] = None
-        try:
-            data["HD Size"] = str(subprocess.check_output('sudo lshw -class disk | grep size', stderr=open(os.devnull, 'w'), shell=True)).split('(',1)[1].split(')')[0]
-        except Exception as error:
-            data["HD Size"] = None
         try:
             data["Manufacturer"] = str(subprocess.check_output('sudo dmidecode -s system-manufacturer', stderr=open(os.devnull, 'w'), shell=True))[2:-3]
         except Exception as error:
@@ -114,10 +95,6 @@ class SystemInfo(object):
         except Exception as error:
             data["Ram_Size"] = None
         try:
-            data["HD_Type"] = str(subprocess.check_output('sudo lshw -class disk -class storage | grep description', stderr=open(os.devnull, 'w'),shell=True)).split('\\n')[0].split(':')[1].strip(' ')
-        except Exception as error:
-            data["HD_Type"] = None
-        try:
             data["Serial_Number"] = str(subprocess.check_output('sudo dmidecode -s system-serial-number', stderr=open(os.devnull, 'w'), shell=True))[2:-3]
         except Exception as error:
             data["Serial_Number"] = None
@@ -127,18 +104,6 @@ class SystemInfo(object):
     def getWindowsSystemSpec(self, data):
         """ Collect hardware info for Windows """
 
-        data["Ip"] = sk.gethostbyname(sk.gethostname())
-        data["OS Version"] = platform.version()
-        partitions = psutil.disk_partitions()
-        total = free = 0
-        for p in partitions:
-            if p.fstype != '':
-                total = total + psutil.disk_usage(p.mountpoint).total
-                free = free + psutil.disk_usage(p.mountpoint).free
-        data["Total Disk Space"] = data["HD Size"] = str(math.floor(total / 2**30)) + " GB"
-        data["Available Space"] = str(math.floor(free / 2**30)) + " GB"
-        data["HD_Type"] = None
-
         try:
             data["Operating System"] = subprocess.check_output('systeminfo | findstr /B /C:"OS Name"',stderr=open(os.devnull, 'w'), shell=True).decode('utf-8').replace('  ','').partition('OS Name:')[2].strip(' \r\n')
         except Exception as error:
@@ -147,10 +112,6 @@ class SystemInfo(object):
             data["Hostname"] = subprocess.check_output('ipconfig /all | findstr "Host Name"',stderr=open(os.devnull, 'w'), shell=True).decode('utf-8').partition(':')[2].strip(' ').strip('\r\n')
         except Exception as error:
             data["Hostname"] = None
-        try:
-            data["CPU_Core"] = str(subprocess.check_output('WMIC CPU Get NumberOfCores', stderr=open(os.devnull, 'w'), shell=True)).split()[1].strip('\\r\\n')
-        except Exception as error:
-            data["CPU_Core"] = None
         try:
             data["Manufacturer"] = str(subprocess.check_output('wmic computersystem get manufacturer', stderr=open(os.devnull, 'w'), shell=True)).split()[1].strip('\\r\\n')
         except Exception as error:
