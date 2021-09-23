@@ -38,20 +38,22 @@ def CheckIfExists(hostname=None, serial_number=None):
 
     assetExists = False
 
-    if(type(QueryHostname(hostname)) is not Error or type(QuerySerialNumber(serial_number)) is not Error):
+    if(type(QuerySerialNumber(serial_number)) is not Error):
         assetExists = True
+    #elif(type(QueryHostname(hostname)) is not Error):
+        #assetExists = True
     
     return assetExists
 
 def GetAssetID(hostname=None,serial_number=None):
 
     serialnumberQuery = QuerySerialNumber(serial_number)
-    hostnameQuery = QueryHostname(hostname)
+    #hostnameQuery = QueryHostname(hostname)
 
     if(type(serialnumberQuery) is not Error):
         return serialnumberQuery['id']
-    elif(type(hostnameQuery) is not Error):
-        return hostnameQuery['id']
+    #elif(type(hostnameQuery) is not Error):
+        #return hostnameQuery['id']
     else:
         return None
 
@@ -84,6 +86,9 @@ def GenerateAssetPayload(system_info):
 def CreateNewAsset(system_info):
 
     payload = GenerateAssetPayload(system_info)
+    payload['asset_tag'] = system_info['Serial_Number']
+
+    print(payload)
 
     if(type(payload) is not Error):
         query = api_url+'/hardware'
@@ -206,7 +211,6 @@ def CreateModel(systemInfo,model_name,device_category):
     
     query = api_url+'/models'
     category = QueryForCategory('Desktops')
-    print('category')
     manufacturer = QueryForManufacturer(systemInfo['Manufacturer'])
     fieldset = QueryForFieldset('Desktop')
 
@@ -223,8 +227,6 @@ def CreateModel(systemInfo,model_name,device_category):
             'manufacturer_id': manufacturer['id'],
             'fieldset_id': fieldset['id']
         }
-        print("=============")
-        print(payload)
 
         response = PostRequest(query,payload)
 
@@ -233,12 +235,8 @@ def CreateModel(systemInfo,model_name,device_category):
 def QueryForCategory(device_type):
     query = api_url+'/categories'
     categoryList = GetRequest(query)
-    print(categoryList)
     for category in categoryList['rows']:
-        print('{0} | {1}'.format(category['name'],device_type))
         if(category['name'] == device_type):
-            print('\n\n\nfound:')
-            print(category)
             return category
 
     return Error('DNE','DNE')
