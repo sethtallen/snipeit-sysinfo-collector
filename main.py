@@ -1,12 +1,13 @@
 import sys
 import tkinter
-from tkinter import messagebox
+from tkinter import Radiobutton, messagebox
 import snipeit_api
 from systeminfo import sysInfo
 
 systemInformation = sysInfo
 createFlag = False
 assetExists = snipeit_api.CheckIfExists(serial_number=systemInformation['Serial_Number'],hostname=systemInformation['Hostname'])
+radio_selection = 'Desktops'
 
 window = tkinter.Tk()
 
@@ -42,14 +43,13 @@ def Button_CreateAsset(systemInformation):
     else:
         messagebox.showerror('Error', 'You already created this asset.')
 
-def PopupMessage(title,text):
-    popup = tkinter.Tk()
-    popup.title(title)
-    popupFrame = tkinter.Frame(padx=10,pady=10)
-    tkinter.Label(master=popupFrame,text=text).pack()
-    tkinter.Button(master=popupFrame,text='Close',command=popup.destroy).pack()
-    popupFrame.pack()
-    popup.mainloop()
+    choice_frame.destroy()
+    tkinter.Button(master=window,text='Close',command=window.destroy,pady=10).pack()
+
+def Button_CreateModel(model_name,device_type,modelframe):
+    response = snipeit_api.CreateModel(systemInformation,model_name,device_type)
+    print(response.text)
+    modelframe.destroy()
 
 systemInfo_frame = tkinter.Frame(padx=10,pady=10,borderwidth=2)
 
@@ -61,6 +61,24 @@ systemInfo_frame.pack(anchor=tkinter.W)
 
 choice_frame = tkinter.Frame(padx=10,pady=10)
 
+def TestFunc():
+    print(radio_selection)
+
+if(snipeit_api.CheckModelNumber(systemInformation['Model']) is False):
+    model_frame = tkinter.Frame(padx=10,pady=10)
+    radio_frame = tkinter.Frame(master=model_frame,padx=10,pady=10)
+    tkinter.Label(master=radio_frame,text='Device Type:').pack(side=tkinter.TOP)
+    R1 = Radiobutton(radio_frame,text='Desktop',variable=radio_selection, value='Desktops',command=TestFunc)
+    R2 = Radiobutton(radio_frame,text='Laptop',variable=radio_selection, value='Laptops',command=TestFunc)
+    R1.pack(side=tkinter.LEFT)
+    R2.pack(side=tkinter.RIGHT)
+    radio_frame.pack(side=tkinter.TOP)
+    tkinter.Label(master=model_frame,text='Please input the device model name:').pack(side=tkinter.LEFT)
+    model_entry = tkinter.Entry(master=model_frame)
+    model_entry.pack(side=tkinter.RIGHT)
+    model_button = tkinter.Button(master=model_frame,text='Submit',command=lambda:Button_CreateModel(model_name=model_entry.get(),modelframe=model_frame,device_type='Desktops')).pack(side=tkinter.BOTTOM)
+    model_frame.pack()
+
 if(assetExists == True):
     tkinter.Label(master=choice_frame,text='An asset with this hostname or serial number already exists in Snipe-IT.').pack(anchor=tkinter.W)
     tkinter.Label(master=choice_frame,text='Update Asset?').pack(anchor=tkinter.CENTER)
@@ -71,5 +89,6 @@ else:
     tkinter.Button(master=choice_frame,text='Create',command=lambda:Button_CreateAsset(systemInformation)).pack(anchor=tkinter.CENTER)
 
 choice_frame.pack()
-
+window.update()
+print(radio_selection)
 window.mainloop()

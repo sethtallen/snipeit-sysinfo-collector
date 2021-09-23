@@ -1,8 +1,9 @@
-from os import system
+from os import name, system
 import requests
+from requests import api
 
-appkey = None #API KEY HERE
-api_url = None #PUT API URL HERE
+appkey = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNTQ5ZDU1OGIxOTE4MjdmMTgxOWEwNjFiNDJiMjgyZGVhNzIxYWM0Y2FjM2Y1Y2MyNWFlZTQ5YTAyZjhkNmEzNjE2MmRkZDVkMGQ4ZWZlNjMiLCJpYXQiOjE2MjkzODQzNzUuNTE4NjMyLCJuYmYiOjE2MjkzODQzNzUuNTE4NjM0LCJleHAiOjI4OTE2ODgzNzUuNDkwODYxLCJzdWIiOiIxIiwic2NvcGVzIjpbXX0.m-Ognw_S46c0JDtFqQUCK8Tu7D3ZTa8366FeJhrnw583xpoHTBMdieVdrlpZW9xdcHATLzKfksIJ-o6LmQBwoCuXd0D-jcGMJ540-ODuDhiIChGOi8C_VzJ2v_ONHBuvvlqeOpBOijHaIFS-fIu-HewpCC2AZd-ZPcynj9X8m7RRzfA6zMjUaiGdcEZctMAKOYtactMFzir0WM3YayZcTHt3AuMoZhZPMTBAKNiwO9WgeXuVul4eVkpk-x5gd1k9bGX7kN58_qpvTJZIG4mmp4pLdMvRtW40Z2xN8-fyXKvVj7gxu-uOU6b0aPHscnXEZNq95NsQBlNOVDXTnweM4nr0YBVYR2UVsdih_3iWF5e-g8vdXtWyFHGuQ3sYetzCIlcNhMwL1jRbOtm7mfaXEtv5fGTNilNgEei_Vi_FiFKIE4xFyOoJf-qsaqZa6Dkq0uHUw9zqYmX7AhF8DUPeTZ5iBKddFwLafFQlD4h3fM3Dg3XSYn7HpxFfH3W6aWC5zrJmOqlA8gaMM_xRQ2K-SGhD9G-cU1vVWZMTfIld7-GI0b6xxg48EC3AUaGY6dyE1Mt2HimnqwM8kmorCBw8mz75eo2VwR4CXSGyNDEsoII0mTB67twclePKcpKAkgHSjkrSfsGH_3spnRuyfQR17kkueuOHDib7VaKg-d9mjcE' #API KEY HERE
+api_url = 'http://snipeit.kenmarkopt.com/api/v1' #PUT API URL HERE
 
 headers = {
     'Accept': 'application/json', 
@@ -19,6 +20,17 @@ class Error():
     def __init__(self, type, message):
         self.error_type = type
         self.error_message = message
+
+
+def CheckModelNumber(model_name=None):
+
+    if(model_name is not None):
+        modelResult = QueryModelNumber(model_name)
+
+        if(type(modelResult) is not Error):
+            return True
+        else:
+            return False
 
 
 #Checks if the asset exists by querying Snipe IT for provided variables
@@ -100,6 +112,7 @@ def GetRequest(query, parameters=None):
 
 def PostRequest(query, payload=None):
     response = requests.request("POST", query, headers=headers,json=payload)
+    return response
 
 def PatchRequest(query,payload=None):
     response = requests.request("PATCH", query,headers=headers, json=payload)
@@ -188,3 +201,68 @@ def QueryModelNumber(model_number):
             return Error('DNE Error', "Model doesn't exist in the database.")
     else:
         return Error('Invalid Input Error',"No model number provided")
+
+def CreateModel(systemInfo,model_name,device_category):
+    
+    query = api_url+'/models'
+    category = QueryForCategory('Desktops')
+    print('category')
+    manufacturer = QueryForManufacturer(systemInfo['Manufacturer'])
+    fieldset = QueryForFieldset('Desktop')
+
+    if(type(manufacturer) is Error):
+        CreateManufacterer(systemInfo['Manufacturer'])
+        manufacturer = QueryForManufacturer(systemInfo['Manufacturer'])
+
+    if(type(query) is not Error):
+        
+        payload = {
+            'name': model_name,
+            'model_number': systemInfo['Model'],
+            'category_id': category['id'],
+            'manufacturer_id': manufacturer['id'],
+            'fieldset_id': fieldset['id']
+        }
+        print("=============")
+        print(payload)
+
+        response = PostRequest(query,payload)
+
+        return response
+
+def QueryForCategory(device_type):
+    query = api_url+'/categories'
+    categoryList = GetRequest(query)
+    print(categoryList)
+    for category in categoryList['rows']:
+        print('{0} | {1}'.format(category['name'],device_type))
+        if(category['name'] == device_type):
+            print('\n\n\nfound:')
+            print(category)
+            return category
+
+    return Error('DNE','DNE')
+
+def QueryForFieldset(fieldset_name):
+    query=api_url+'/fieldsets'
+    fieldsetList = GetRequest(query=query)
+    
+    for fieldset in fieldsetList['rows']:
+        if(fieldset['name'] == fieldset_name):
+            return fieldset
+    
+    return Error('DNE','DNE')
+
+def CreateManufacterer(manufacturer_name):
+    query=api_url+'/manufacturers'
+    PostRequest(query=query,payload={'name':manufacturer_name})
+
+def QueryForManufacturer(manufacturer_name):
+    query = api_url+'/manufacturers'
+    manufacturerList = GetRequest(query=query)
+    
+    for manufacturer in manufacturerList['rows']:
+        if(manufacturer['name'].lower() == manufacturer_name.lower()):
+            return manufacturer
+    
+    return Error('DNE Error', "Don't exist")
