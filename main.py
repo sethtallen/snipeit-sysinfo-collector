@@ -1,6 +1,7 @@
 import sys
 import tkinter
-from tkinter import Radiobutton, messagebox
+from tkinter import Radiobutton, Text, messagebox
+from tkinter.constants import END
 import snipeit_api
 from systeminfo import sysInfo
 
@@ -17,12 +18,12 @@ def DisplaySysInfo(systemInformation, container):
         newLabel = tkinter.Label(master=container,text="{0}: {1}".format(entry,systemInformation[entry]))
         newLabel.pack(anchor=tkinter.W)
 
-def Button_UpdateAsset(systemInformation):
+def Button_UpdateAsset(systemInformation,notes):
     asset_id = snipeit_api.GetAssetID(serial_number=systemInformation['Serial_Number'],hostname=systemInformation['Hostname'])
 
     if(asset_id != None):
 
-        updateResult = snipeit_api.UpdateAsset(systemInformation,None)
+        updateResult = snipeit_api.UpdateAsset(systemInformation,asset_id,notes=notes)
 
         if(updateResult is True):
             messagebox.showinfo('Success', 'Asset successfully updated')
@@ -31,10 +32,10 @@ def Button_UpdateAsset(systemInformation):
     else:
         messagebox.showerror('Error', 'Asset was unable to be updated.')
 
-def Button_CreateAsset(systemInformation):
+def Button_CreateAsset(systemInformation,notes):
 
     if(createFlag is False):
-        createResult = snipeit_api.CreateNewAsset(systemInformation)
+        createResult = snipeit_api.CreateNewAsset(systemInformation,notes)
 
         if(createResult is True):
             messagebox.showinfo('Success', 'Asset successfully created')
@@ -50,6 +51,22 @@ def Button_CreateModel(model_name,device_type,modelframe):
     response = snipeit_api.CreateModel(systemInformation,model_name,device_type)
     print(response.text)
     modelframe.destroy()
+    ShowChoiceFrame()
+
+def ShowChoiceFrame():
+
+    notes_entry = tkinter.Text(master=choice_frame,height=3)
+
+    if(assetExists == True):
+        tkinter.Label(master=choice_frame,text='An asset with this hostname or serial number already exists in Snipe-IT.').pack(anchor=tkinter.W)
+        tkinter.Label(master=choice_frame,text='Update Asset?').pack(anchor=tkinter.CENTER)
+        notes_entry.pack(anchor=tkinter.CENTER)
+        tkinter.Button(master=choice_frame,text='Update',command=lambda:Button_UpdateAsset(systemInformation,notes_entry.get('1.0',END))).pack(anchor=tkinter.CENTER)
+    else:
+        tkinter.Label(master=choice_frame,text="This asset does not exist within Snipe-IT.").pack(anchor=tkinter.W)
+        tkinter.Label(master=choice_frame,text='Create Asset?').pack(anchor=tkinter.CENTER)
+        notes_entry.pack(anchor=tkinter.CENTER)
+        tkinter.Button(master=choice_frame,text='Create',command=lambda:Button_CreateAsset(systemInformation,notes_entry.get('1.0',END))).pack(anchor=tkinter.CENTER)
 
 systemInfo_frame = tkinter.Frame(padx=10,pady=10,borderwidth=2)
 
@@ -78,15 +95,8 @@ if(snipeit_api.CheckModelNumber(systemInformation['Model']) is False):
     model_entry.pack(side=tkinter.RIGHT)
     model_button = tkinter.Button(master=model_frame,text='Submit',command=lambda:Button_CreateModel(model_name=model_entry.get(),modelframe=model_frame,device_type='Desktops')).pack(side=tkinter.BOTTOM)
     model_frame.pack()
-
-if(assetExists == True):
-    tkinter.Label(master=choice_frame,text='An asset with this hostname or serial number already exists in Snipe-IT.').pack(anchor=tkinter.W)
-    tkinter.Label(master=choice_frame,text='Update Asset?').pack(anchor=tkinter.CENTER)
-    tkinter.Button(master=choice_frame,text='Update',command=lambda:Button_UpdateAsset(systemInformation)).pack(anchor=tkinter.CENTER)
 else:
-    tkinter.Label(master=choice_frame,text="This asset does not exist within Snipe-IT.").pack(anchor=tkinter.W)
-    tkinter.Label(master=choice_frame,text='Create Asset?').pack(anchor=tkinter.CENTER)
-    tkinter.Button(master=choice_frame,text='Create',command=lambda:Button_CreateAsset(systemInformation)).pack(anchor=tkinter.CENTER)
+    ShowChoiceFrame()
 
 choice_frame.pack()
 window.update()

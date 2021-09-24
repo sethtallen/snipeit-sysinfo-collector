@@ -59,7 +59,7 @@ def GetAssetID(hostname=None,serial_number=None):
 
     
 #Grabs the appropriate information to update hardware information.
-def GenerateAssetPayload(system_info):
+def GenerateAssetPayload(system_info,notes=None):
 
     modelInformation = QueryModelNumber(system_info['Model'])
 
@@ -77,31 +77,36 @@ def GenerateAssetPayload(system_info):
             'serial':system_info['Serial_Number']
         }
 
+        if(notes != None):
+            payload['notes'] = notes
+
         return payload
 
     else:
         #Return error information back down
         return modelInformation
 
-def CreateNewAsset(system_info):
+def CreateNewAsset(system_info,notes=None):
 
     payload = GenerateAssetPayload(system_info)
     payload['asset_tag'] = system_info['Serial_Number']
 
     print(payload)
 
-    if(type(payload) is not Error):
+    if(type(payload,notes) is not Error):
         query = api_url+'/hardware'
         PostRequest(query=query,payload=payload)
         return True
     else:
         return payload
 
-def UpdateAsset(system_info, asset_id):
-    payload = GenerateAssetPayload(system_info)
+def UpdateAsset(system_info, asset_id,notes=None):
+    print(system_info, asset_id,notes)
+    payload = GenerateAssetPayload(system_info,notes)
     if(type(payload) is not Error and asset_id != None):
         query = api_url+'/hardware/{0}'.format(asset_id)
-        PatchRequest(query,payload)
+        response = PatchRequest(query,payload)
+        print(response.text)
         return True
     else:
         return payload
@@ -121,6 +126,7 @@ def PostRequest(query, payload=None):
 
 def PatchRequest(query,payload=None):
     response = requests.request("PATCH", query,headers=headers, json=payload)
+    return response
 
 #Recursion method, seperates a desired nested dictionary
 def QueryForDictionary(nested_dict,target_dictionary):
