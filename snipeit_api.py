@@ -91,9 +91,7 @@ def CreateNewAsset(system_info,notes=None):
     payload = GenerateAssetPayload(system_info)
     payload['asset_tag'] = system_info['Serial_Number']
 
-    print(payload)
-
-    if(type(payload,notes) is not Error):
+    if(type(payload) is not Error):
         query = api_url+'/hardware'
         PostRequest(query=query,payload=payload)
         return True
@@ -101,12 +99,10 @@ def CreateNewAsset(system_info,notes=None):
         return payload
 
 def UpdateAsset(system_info, asset_id,notes=None):
-    print(system_info, asset_id,notes)
     payload = GenerateAssetPayload(system_info,notes)
     if(type(payload) is not Error and asset_id != None):
         query = api_url+'/hardware/{0}'.format(asset_id)
         response = PatchRequest(query,payload)
-        print(response.text)
         return True
     else:
         return payload
@@ -235,6 +231,9 @@ def CreateModel(systemInfo,model_name,device_category):
         }
 
         response = PostRequest(query,payload)
+
+        if(type(response) is not Error):
+            return True
 
         return response
 
